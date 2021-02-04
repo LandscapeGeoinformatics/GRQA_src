@@ -35,8 +35,8 @@ for obs_file in obs_files:
     param_name = None
     unit = None
     medians = []
-    min_year = 2021
-    max_year = 0
+    min_years = []
+    max_years = []
     obs_reader = pd.read_csv(obs_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='utf-8', chunksize=100000)
     for obs_chunk in obs_reader:
         id_set = set(obs_chunk['site_id'])
@@ -47,19 +47,19 @@ for obs_file in obs_files:
             unit = obs_chunk['unit'].mode()[0]
         chunk_median = obs_chunk['obs_value'].median()
         medians.append(chunk_median)
-        obs_chunk['year'] = pd.to_datetime(obs_df['obs_date'], errors='coerce').dt.year
-        if obs_chunk['year'].min() < min_year:
-			min_year = obs_chunk['year'].min()
-		if obs_chunk['year'].max() > max_year:
-			max_year = obs_chunk['year'].max()
+        obs_chunk['year'] = pd.to_datetime(obs_chunk['obs_date'], errors='coerce').dt.year
+        min_years.append(obs_chunk['year'].min())
+        max_years.append(obs_chunk['year'].max())
     site_count = len(site_ids)
     median = np.round(np.mean(medians), 3)
-    row = (param_code, param_name, unit, site_count, obs_count, median, '{} - {}'.format(min_year, max_year))
+    min_year = np.min(min_years)
+    max_year = np.max(max_years)
+    row = (param_code, param_name, site_count, obs_count, median, unit, min_year, max_year)
     rows.append(row)
 
 # Create and export DF with statistics
 stats_df = pd.DataFrame(
-    rows, columns=['Parameter code', 'Parameter name', 'Unit', 'Sites', 'Observations', 'Median value', 'Timeframe']
+    rows, columns=['Parameter code', 'Parameter name', 'Sites', 'Observations', 'Median value', 'Unit', 'Start', 'End']
 )
 stats_df.sort_values(by=['Parameter code'], key=lambda col: col.str.lower(), ascending=True, inplace=True)
-stats_df.to_csv(os.path.join(meta_dir, ds_name + '_param_stats_time.csv'), sep=';', index=False, encoding='utf-8')
+stats_df.to_csv(os.path.join(meta_dir, ds_name + '_param_stats.csv'), sep=';', index=False, encoding='utf-8')
