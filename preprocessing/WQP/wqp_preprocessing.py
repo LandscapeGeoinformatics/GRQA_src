@@ -14,6 +14,14 @@ def strip_whitespace(df):
             df[col] = df[col].str.strip()
     return df
 
+# Function for replacing semicolons and line breaks
+def replace_chars(df):
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].str.replace(';', ',')
+            df[col] = df[col].str.replace('\n', '')
+    return df
+
 # Function to check if the date is valid
 def check_date(row, date_col):
     correct_date = False
@@ -120,10 +128,11 @@ site_dtypes = {
     'LatitudeMeasure': np.float64,
     'LongitudeMeasure': np.float64
 }
-site_df = pd.read_csv(site_file, sep=',', usecols=site_dtypes.keys(), dtype=site_dtypes)
+site_df = pd.read_csv(site_file, sep=',', usecols=site_dtypes.keys(), dtype=site_dtypes, quotechar='"')
 if len(site_df) < 1:
     sys.exit()
 site_df = strip_whitespace(site_df)
+site_df = replace_chars(site_df)
 site_df.drop_duplicates(inplace=True)
 site_df.reset_index(drop=True, inplace=True)
 
@@ -197,7 +206,7 @@ obs_dtypes = {
     'ResultAnalyticalMethod/MethodName': object,
     'ResultLaboratoryCommentText': object
 }
-obs_reader = pd.read_csv(obs_file, sep=',', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000)
+obs_reader = pd.read_csv(obs_file, sep=',', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000, quotechar='"')
 
 # Process observation data in chunks
 obs_row_count = 0
@@ -205,6 +214,7 @@ obs_chunks = []
 for obs_chunk in obs_reader:
     obs_row_count += len(obs_chunk)
     obs_chunk = strip_whitespace(obs_chunk)
+    obs_chunk = replace_chars(obs_chunk)
     obs_chunk.drop_duplicates(inplace=True)
     obs_chunk.reset_index(drop=True, inplace=True)
     # Drop missing or negative values
@@ -257,12 +267,10 @@ merged_df = site_df\
         cmap_df, how='left', left_on='USGSPCode',
         right_on='source_param_code'
     )
-    # .merge(
-        # cmap_df, how='left', left_on=['USGSPCode', 'ResultMeasure/MeasureUnitCode'],
-        # right_on=['source_param_code', 'source_unit']
-    # )
 if len(merged_df) < 1:
     sys.exit()
+merged_df.drop_duplicates(inplace=True)
+merged_df.reset_index(drop=True, inplace=True)
 merged_df.drop(merged_df[(merged_df['param_code'].isnull())].index, inplace=True, errors='ignore')
 merged_df.drop(merged_df[(merged_df['obs_date'].isnull())].index, inplace=True, errors='ignore')
 
@@ -326,7 +334,7 @@ stats_df = stats_df.merge(agg_stats_df, on='source_param_code')
 fname = '_'.join([ds_name, param_code, 'processed', 'stats.csv'])
 stats_df.to_csv(os.path.join(proc_dir, 'meta', fname), sep=';', index=False, encoding='utf-8')
 
-# Export processed data to CSV
+# Export processed data to CSV (the output folder should be empty)
 meta_cols = ['ResultAnalyticalMethod/MethodName', 'ResultLaboratoryCommentText']
 output_codes = merged_df['param_code'].unique()
 for code in output_codes:
@@ -361,6 +369,7 @@ for code in output_codes:
     # Add metadata columns to the dictionary
     for col in meta_cols:
         col_name = '_'.join([ds_name, 'meta', col])
+        col_name = col_name.replace('/', '_')
         code_dict[col_name] = code_df[col]
     output_df = pd.DataFrame(code_dict)
     output_fname = os.path.join(proc_dir, code + '_' + ds_name + '.csv')

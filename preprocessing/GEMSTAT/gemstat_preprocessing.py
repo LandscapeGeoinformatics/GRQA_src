@@ -13,6 +13,14 @@ def strip_whitespace(df):
             df[col] = df[col].str.strip()
     return df
 
+# Function for replacing semicolons and line breaks
+def replace_chars(df):
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].str.replace(';', ',')
+            df[col] = df[col].str.replace('\n', '')
+    return df
+
 # Function to check if the date is valid
 def check_date(row, date_col):
     correct_date = False
@@ -109,6 +117,7 @@ site_dtypes = {
 }
 site_df = pd.read_excel(meta_file, sheet_name='Station_Metadata', usecols=site_dtypes.keys(), dtype=site_dtypes)
 site_df = strip_whitespace(site_df)
+site_df = replace_chars(site_df)
 site_df.drop_duplicates(inplace=True)
 
 # Keep only river sites
@@ -146,6 +155,7 @@ param_df = pd.read_excel(
     meta_file, sheet_name='Parameter_Metadata', usecols=param_dtypes.keys(), dtype=param_dtypes
 )
 param_df = strip_whitespace(param_df)
+param_df = replace_chars(param_df)
 info_dicts.append(get_file_info(meta_file, len(param_df), 'Parameter metadata', 'Parameter_Metadata'))
 mv_dfs.append(get_missing_values(param_df, meta_file, 'Parameter_Metadata'))
 
@@ -160,12 +170,12 @@ method_df = pd.read_excel(
     meta_file, sheet_name='Methods_Metadata', usecols=method_dtypes.keys(), dtype=method_dtypes
 )
 method_df = strip_whitespace(method_df)
+method_df = replace_chars(method_df)
 info_dicts.append(get_file_info(meta_file, len(method_df), 'Method metadata', 'Methods_Metadata'))
 mv_dfs.append(get_missing_values(method_df, meta_file, 'Methods_Metadata'))
 
 # List of observation files
 obs_files = glob.glob(os.path.join(raw_dir, '*.csv'))
-#obs_files = obs_files[:1]
 
 # Import observation data
 obs_dtypes = {
@@ -183,6 +193,7 @@ obs_dfs = []
 for file in obs_files:
     obs_df = pd.read_csv(file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='latin-1')
     obs_df = strip_whitespace(obs_df)
+    obs_df = replace_chars(obs_df)
     obs_df.drop_duplicates(inplace=True)
     info_dicts.append(get_file_info(file, len(obs_df), 'Observation data'))
     mv_dfs.append(get_missing_values(obs_df, file))
@@ -239,6 +250,8 @@ merged_df = site_df\
         cmap_df, how='left', left_on=['Parameter Code', 'Unit'],
         right_on=['source_param_code', 'source_unit']
     )
+merged_df.drop_duplicates(inplace=True)
+merged_df.reset_index(drop=True, inplace=True)
 merged_df.drop(merged_df[(merged_df['param_code'].isnull())].index, inplace=True, errors='ignore')
 
 # Convert observation values
@@ -302,6 +315,7 @@ for code in output_codes:
     # Add metadata columns to the dictionary
     for col in meta_cols:
         col_name = '_'.join([ds_name, 'meta', col])
+        col_name = col_name.replace(' ', '_')
         code_dict[col_name] = code_df[col]
     output_df = pd.DataFrame(code_dict)
     output_df.to_csv(os.path.join(proc_dir, code + '_' + ds_name + '.csv'), sep=';', index=False, encoding='utf-8')

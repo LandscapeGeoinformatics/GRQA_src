@@ -12,6 +12,13 @@ def strip_whitespace(df):
         if df[col].dtype == object:
             df[col] = df[col].str.strip()
     return df
+# Function for replacing semicolons and line breaks
+def replace_chars(df):
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].str.replace(';', ',')
+            df[col] = df[col].str.replace('\n', '')
+    return df
 
 # Function to check if the date is valid
 def check_date(row, date_col):
@@ -96,6 +103,7 @@ param_codes = cmap_df['source_param_code'].to_list()
 site_file = os.path.join(dl_dir, 'Shapefiles_GloRiCh/Shapes_GloRiCh/Sampling_Locations_v1.shp')
 site_df = gpd.read_file(site_file)
 site_df = strip_whitespace(site_df)
+site_df = replace_chars(site_df)
 site_df.drop_duplicates(inplace=True)
 
 # Get site file information and append to list
@@ -146,6 +154,7 @@ sname_df = pd.read_csv(
     encoding='latin-1'
 )
 sname_df = strip_whitespace(sname_df)
+sname_df = replace_chars(sname_df)
 sname_df.drop_duplicates(inplace=True)
 info_dicts.append(get_file_info(sname_file, len(sname_df), 'Site name data'))
 mv_dfs.append(get_missing_values(sname_df, sname_file))
@@ -156,8 +165,9 @@ catchment_dtypes = {
     'STAT_ID': np.int64,
     'Shape_Area': np.float64
 }
-catchment_df = pd.read_csv(catchment_file, sep=',', usecols=catchment_dtypes.keys(), dtype=catchment_dtypes)
+catchment_df = pd.read_csv(catchment_file, sep=',', usecols=catchment_dtypes.keys(), dtype=catchment_dtypes, skipinitialspace=True, quotechar='"')
 catchment_df = strip_whitespace(catchment_df)
+catchment_df = replace_chars(catchment_df)
 catchment_df.drop_duplicates(inplace=True)
 info_dicts.append(get_file_info(catchment_file, len(catchment_df), 'Catchment data'))
 mv_dfs.append(get_missing_values(catchment_df, catchment_file))
@@ -177,7 +187,7 @@ remark_cols = [code + '_vrc' for code in param_codes]
 for value_col, remark_col in zip(value_cols, remark_cols):
     obs_dtypes[value_col] = np.float64
     obs_dtypes[remark_col] = object
-obs_reader = pd.read_csv(obs_file, sep=',', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000)
+obs_reader = pd.read_csv(obs_file, sep=',', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000, skipinitialspace=True, quotechar='"')
 
 # Process observation data in chunks
 obs_row_count = 0
@@ -185,6 +195,7 @@ obs_chunks = []
 for obs_chunk in obs_reader:
     obs_row_count += len(obs_chunk)
     obs_chunk = strip_whitespace(obs_chunk)
+    obs_chunk = replace_chars(obs_chunk)
     obs_chunk.drop_duplicates(inplace=True)
     value_chunk = pd.melt(
         obs_chunk, id_vars='STAT_ID', value_vars=value_cols, var_name='source_param_code',
@@ -242,6 +253,8 @@ merged_df = site_df\
     .merge(obs_df, how='left', on='STAT_ID')\
     .merge(cmap_df, how='left', on='source_param_code')\
     .merge(remark_df, how='left', left_on='remark', right_on='Value remark code')
+merged_df.drop_duplicates(inplace=True)
+merged_df.reset_index(drop=True, inplace=True)
 merged_df.drop(merged_df[(merged_df['param_code'].isnull())].index, inplace=True, errors='ignore')
 merged_df.drop(merged_df[(merged_df['obs_date'].isnull())].index, inplace=True, errors='ignore')
 
@@ -304,6 +317,7 @@ for code in output_codes:
     # Add metadata columns to the dictionary
     for col in meta_cols:
         col_name = '_'.join([ds_name, 'meta', col])
+        col_name = col_name.replace(' ', '_')
         code_dict[col_name] = code_df[col]
     output_df = pd.DataFrame(code_dict)
     output_df.to_csv(os.path.join(proc_dir, code + '_' + ds_name + '.csv'), sep=';', index=False, encoding='utf-8')

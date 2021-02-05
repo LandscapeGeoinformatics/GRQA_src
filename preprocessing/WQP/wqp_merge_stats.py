@@ -16,3 +16,6 @@ for string in fname_strings:
     stats_files = glob.glob(os.path.join(meta_dir, ds_name + '_*_' + string))
     stats_df = pd.concat([pd.read_csv(file, sep=';', low_memory=False, encoding='utf-8') for file in stats_files])
     stats_df.to_csv(os.path.join(meta_dir, ds_name + '_' + string), sep=';', index=False)
+    # Remove old files
+    for file in stats_files:
+        os.remove(file)
