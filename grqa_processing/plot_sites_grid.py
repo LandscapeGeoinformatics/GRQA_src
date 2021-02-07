@@ -26,6 +26,7 @@ fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
 
 # Import observation data
 obs_dtypes = {
+    'obs_id': object,
     'site_id': object,
     'lat_wgs84': np.float64,
     'lon_wgs84': np.float64,
@@ -43,7 +44,7 @@ units = []
 outliers = []
 for param_code in param_codes:
     obs_file = os.path.join(data_dir, param_code + '_' + ds_name + '.csv')
-    obs_reader = pd.read_csv(obs_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000)
+    obs_reader = pd.read_csv(obs_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=10000)
     obs_chunks = []
     for obs_chunk in obs_reader:
         obs_chunk.drop_duplicates(inplace=True)
@@ -53,7 +54,7 @@ for param_code in param_codes:
     obs_df.reset_index(drop=True, inplace=True)
     # Percentage of outliers
     outlier_count = len(obs_df[obs_df['obs_iqr_outlier'] == 'yes'])
-    outlier_perc = np.round(outlier_count / len(obs_df) * 100, 1)
+    outlier_perc = np.round(outlier_count / obs_df['obs_id'].nunique() * 100, 1)
     outliers.append(outlier_perc)
 	# Get unit
     unit = obs_df['unit'].iloc[0]

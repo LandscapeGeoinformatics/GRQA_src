@@ -14,6 +14,7 @@ meta_dir = os.path.join(proj_dir, 'data', ds_name, 'meta')
 
 # Read observation data and collect statistics
 obs_dtypes = {
+    'obs_id': object,
     'site_id': object,
     'lat_wgs84': np.float64,
     'lon_wgs84': np.float64,
@@ -37,11 +38,12 @@ for obs_file in obs_files:
     medians = []
     min_years = []
     max_years = []
-    obs_reader = pd.read_csv(obs_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='utf-8', chunksize=100000)
+    outlier_count = 0
+    obs_reader = pd.read_csv(obs_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='utf-8', chunksize=10000)
     for obs_chunk in obs_reader:
         id_set = set(obs_chunk['site_id'])
         site_ids.update(id_set)
-        obs_count += len(obs_chunk['obs_value'])
+        obs_count += obs_chunk['obs_id'].nunique()
         if param_name is None:
             param_name = obs_chunk['param_name'].mode()[0]
             unit = obs_chunk['unit'].mode()[0]
@@ -50,16 +52,18 @@ for obs_file in obs_files:
         obs_chunk['year'] = pd.to_datetime(obs_chunk['obs_date'], errors='coerce').dt.year
         min_years.append(obs_chunk['year'].min())
         max_years.append(obs_chunk['year'].max())
+        outlier_count += len(obs_chunk[obs_chunk['obs_iqr_outlier'] == 'yes'])
     site_count = len(site_ids)
     median = np.round(np.mean(medians), 3)
     min_year = np.min(min_years)
     max_year = np.max(max_years)
-    row = (param_code, param_name, site_count, obs_count, median, unit, min_year, max_year)
+    outlier_perc = np.round(outlier_count / obs_count * 100, 1)
+    row = (param_code, param_name, site_count, obs_count, median, unit, min_year, max_year, outlier_perc)
     rows.append(row)
 
 # Create and export DF with statistics
 stats_df = pd.DataFrame(
-    rows, columns=['Parameter code', 'Parameter name', 'Sites', 'Observations', 'Median value', 'Unit', 'Start', 'End']
+    rows, columns=['Parameter code', 'Parameter name', 'Sites', 'Observations', 'Median value', 'Unit', 'Start year', 'End year', 'Outlier %']
 )
 stats_df.sort_values(by=['Parameter code'], key=lambda col: col.str.lower(), ascending=True, inplace=True)
 stats_df.to_csv(os.path.join(meta_dir, ds_name + '_param_stats.csv'), sep=';', index=False, encoding='utf-8')

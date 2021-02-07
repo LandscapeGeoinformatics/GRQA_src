@@ -12,12 +12,14 @@ def strip_whitespace(df):
         if df[col].dtype == object:
             df[col] = df[col].str.strip()
     return df
+
 # Function for replacing semicolons and line breaks
 def replace_chars(df):
     for col in df.columns:
         if df[col].dtype == object:
             df[col] = df[col].str.replace(';', ',')
             df[col] = df[col].str.replace('\n', '')
+            df[col] = df[col].str.replace('\r', ' ')
     return df
 
 # Function to check if the date is valid

@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import collections
+import matplotlib.patches as mpatches
 
 # Name of the dataset
 ds_name = 'GRQA'
@@ -22,6 +24,7 @@ fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
 
 # Import observation data
 obs_dtypes = {
+    'obs_id': object,
     'site_id': object,
     'obs_date': object,
     'obs_value': np.float64,
@@ -41,7 +44,7 @@ obs_df.reset_index(drop=True, inplace=True)
 
 # Percentage of outliers
 outlier_count = len(obs_df[obs_df['obs_iqr_outlier'] == 'yes'])
-outlier_perc = np.round(outlier_count / len(obs_df) * 100, 1)
+outlier_perc = np.round(outlier_count / obs_df['obs_id'].nunique() * 100, 1)
 
 # Get unit
 unit = obs_df['unit'].iloc[0]
@@ -60,6 +63,7 @@ obs_df.drop(obs_df[obs_df['year'] < max_year].index, inplace=True)
 len_after = len(obs_df)
 before_perc = round((len_before - len_after) / len_before * 100, 1)
 fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 4), facecolor='w')
+title_pad = 5
 if before_perc != 0.0:
     text = 'Percentage of observations {:.0f} - {:.0f}: {:.1f}%'.format(min_year, max_year, before_perc)
     ax.text(0.5, 1.05, text, ha='center', va='center', transform=ax.transAxes, fontsize=6)
@@ -70,21 +74,23 @@ ax.set_title(
 )
 for source, data in obs_df.groupby('source'):
     sns.histplot(
-        ax=ax, data=obs_df, x='year', hue='source', color=obs_df['source'].map(color_dict), element='step',
-        binwidth=1, stat='count', label=source
+        ax=ax, data=obs_df, x='year', hue='source', palette=color_dict, element='step',
+        binwidth=1, stat='count'
     )
 ax.set_xlabel('year', fontname='Arial')
 ax.set_ylabel('observation count', fontname='Arial')
 ax.legend([], [], frameon=False)
-handles, labels = fig.axes[-1].get_legend_handles_labels()
-handle_list, label_list = [], []
-for handle, label in zip(handles, labels):
-    if handle not in handle_list:
-        handle_list.append(handle)
-    if label not in label_list:
-        label_list.append(label)
+legend_dict = collections.OrderedDict([])
+for source in sources:
+	if source in obs_df['source'].unique():
+		color = colors[sources.index(source)]
+		legend_dict.update({source: color})
+patches = []
+for source in legend_dict:
+	data_key = mpatches.Patch(color=legend_dict[source], label=source)
+	patches.append(data_key)
 fig.legend(
-    handle_list, label_list, loc='upper right', fontsize=8, bbox_to_anchor=[1.2, 0.8], 
+    handles=patches, loc='upper right', fontsize=8, bbox_to_anchor=[1.2, 0.8]
 )
 fig.tight_layout()
 plt.savefig(
@@ -96,6 +102,7 @@ obs_df.drop(obs_df[obs_df['obs_iqr_outlier'] == 'yes'].index, inplace=True)
 
 # Create histogram
 fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 4), facecolor='w')
+title_pad = 0
 if outlier_perc != 0.0:
     text = 'Outliers detected by the IQR test ({}% of observations) have been removed'.format(outlier_perc)
     ax.text(0.5, 1.05, text, ha='center', va='center', transform=ax.transAxes, fontsize=6)

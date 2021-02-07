@@ -12,6 +12,15 @@ def strip_whitespace(df):
             df[col] = df[col].str.strip()
     return df
 
+# Function for replacing semicolons and line breaks
+def replace_chars(df):
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].str.replace(';', ',')
+            df[col] = df[col].str.replace('\n', '')
+            df[col] = df[col].str.replace('\r', ' ')
+    return df
+
 # Function to check if the date is valid
 def check_date(row, date_col):
     correct_date = False
@@ -104,6 +113,7 @@ site_dtypes = {
 }
 site_df = pd.read_csv(site_file, sep=',', usecols=site_dtypes.keys(), dtype=site_dtypes)
 site_df = strip_whitespace(site_df)
+site_df = replace_chars(site_df)
 site_df.drop_duplicates(inplace=True)
 site_df.reset_index(drop=True, inplace=True)
 
@@ -149,6 +159,7 @@ param_dtypes = {
 param_file = os.path.join(dl_dir, 'ObservedProperty.csv')
 param_df = pd.read_csv(param_file, sep=',', usecols=param_dtypes.keys(), dtype=param_dtypes, quotechar='"')
 param_df = strip_whitespace(param_df)
+param_df = replace_chars(param_df)
 param_df.drop_duplicates(inplace=True)
 param_df.reset_index(drop=True, inplace=True)
 info_dicts.append(get_file_info(param_file, len(param_df), 'Water chemistry observations'))
@@ -178,6 +189,7 @@ obs_chunks = []
 for obs_chunk in obs_reader:
     obs_row_count += len(obs_chunk)
     obs_chunk = strip_whitespace(obs_chunk)
+    obs_chunk = replace_chars(obs_chunk)
     obs_chunk.drop_duplicates(inplace=True)
     obs_chunk.reset_index(drop=True, inplace=True)
     obs_chunk['resultQualityObservedValueBelowLOQ'] = pd.to_numeric(obs_chunk['resultQualityObservedValueBelowLOQ'], errors='coerce')
@@ -239,6 +251,8 @@ merged_df = site_df\
         cmap_df, how='left', left_on=['observedPropertyDeterminandCode', 'resultUom'],
         right_on=['source_param_code', 'source_unit']
     )
+merged_df.drop_duplicates(inplace=True)
+merged_df.reset_index(drop=True, inplace=True)
 merged_df.drop(merged_df[(merged_df['param_code'].isnull())].index, inplace=True, errors='ignore')
 merged_df.drop(merged_df[(merged_df['obs_date'].isnull())].index, inplace=True, errors='ignore')
 

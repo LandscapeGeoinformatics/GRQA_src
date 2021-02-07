@@ -20,6 +20,7 @@ def replace_chars(df):
         if df[col].dtype == object:
             df[col] = df[col].str.replace(';', ',')
             df[col] = df[col].str.replace('\n', '')
+            df[col] = df[col].str.replace('\r', ' ')
     return df
 
 # Function to check if the date is valid

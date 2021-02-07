@@ -13,6 +13,15 @@ def strip_whitespace(df):
             df[col] = df[col].str.strip()
     return df
 
+# Function for replacing semicolons and line breaks
+def replace_chars(df):
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].str.replace(';', ',')
+            df[col] = df[col].str.replace('\n', '')
+            df[col] = df[col].str.replace('\r', ' ')
+    return df
+
 # Function to check if the date is valid
 def check_date(row, date_col):
     correct_date = False
@@ -116,6 +125,7 @@ obs_chunks = []
 for obs_chunk in obs_reader:
     obs_row_count += len(obs_chunk)
     obs_chunk = strip_whitespace(obs_chunk)
+    obs_chunk = replace_chars(obs_chunk)
     obs_chunk.drop_duplicates(inplace=True)
     # Drop sites with missing or implausible location information
     obs_chunk.drop(obs_chunk[(obs_chunk['SITE_NO'].isnull())].index, inplace=True, errors='ignore')
@@ -188,6 +198,8 @@ merged_df = obs_df\
         cmap_df, how='left', left_on=['VARIABLE_NAME', 'FORM_NAME'],
         right_on=['source_param_code', 'source_param_code_meta']
 )
+merged_df.drop_duplicates(inplace=True)
+merged_df.reset_index(drop=True, inplace=True)
 merged_df.drop(merged_df[(merged_df['param_code'].isnull())].index, inplace=True, errors='ignore')
 
 # Convert observation values
