@@ -1,5 +1,7 @@
 # GRQA_src
-Scripts used during the creation of the Global River Water Quality Archive (GRQA)
+Scripts used during the creation of the Global River Water Quality Archive (GRQA).
+
+The dataset can be downloaded at <http://dx.doi.org/10.23673/re-273>
 
 The scripts are divided into two folders. Folder **preprocessing** contains scripts used for preprocessing raw source data into a common structure used for GRQA. Folder **grqa_processing** contains scripts used for processing the merged data, generating plots and statistics.
 
@@ -15,5 +17,7 @@ The scripts are divided into two folders. Folder **preprocessing** contains scri
 * *\*\_param\_stats* for calculating GRQA time series statistics per parameter
 * *\*\_plot\_sites* for creating maps of observation site distribution, monthly availablity, monthly continuity and median value per parameter
 * *\*\_plot\_hist* for creating temporal distribution plots, histograms and box plots per parameter
+* *\*\_plot\_sites\_grid* for creating maps of observation site distribution, monthly availablity, monthly continuity and median value of DO, DOC, TP and TSS for the paper
+* *\*\_plot\_hist\_grid* for creating temporal distribution plots, histograms and box plots of DO, DOC, TP and TSS for the paper
 
-Each Python script has a corresponding shell script that was used for submitting Slurm jobs on the HPC cluster of University of Tartu.
+Each Python script has a corresponding shell script that was used for submitting Slurm jobs to the HPC cluster of University of Tartu.
