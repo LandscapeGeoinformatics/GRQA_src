@@ -205,10 +205,7 @@ for obs_chunk in obs_reader:
         obs_chunk[(obs_chunk['resultObservedValue'].isnull()) | (obs_chunk['resultObservedValue'] <= 0)].index,
         inplace=True, errors='ignore'
     )
-    # Keep only values that are above detection limit, confirmed as correct and from a reliable source
-    obs_chunk.drop(
-        obs_chunk[obs_chunk['resultQualityObservedValueBelowLOQ'] != 0].index, inplace=True, errors='ignore'
-    )
+    # Keep only values that are confirmed as correct and from a reliable source
     obs_chunk.drop(obs_chunk[obs_chunk['resultObservationStatus'] != 'A'].index, inplace=True, errors='ignore')
     obs_chunk.drop(obs_chunk[obs_chunk['metadata_observationStatus'] != 'A'].index, inplace=True, errors='ignore')
     obs_chunks.append(obs_chunk)
@@ -243,6 +240,9 @@ mv_df = pd.concat(mv_dfs)
 mv_df.to_csv(
     os.path.join(proc_dir, 'meta', ds_name + '_missing_values.csv'), sep=';', index=False, encoding='utf-8'
 )
+
+# Flag values that are marked as below detection limit in source data
+obs_df.loc[obs_df['resultQualityObservedValueBelowLOQ'] == 1, 'detection_limit_flag'] = '<'
 
 # Merge the DFs
 merged_df = site_df\
@@ -306,6 +306,7 @@ for code in output_codes:
         'source_param_name': code_df['source_param_name'],
         'obs_value': code_df['obs_value'],
         'source_obs_value': code_df['resultObservedValue'],
+        'detection_limit_flag': code_df['detection_limit_flag'],
         'param_form': code_df['param_form'],
         'source_param_form': code_df['source_param_form'],
         'unit': code_df['unit'],

@@ -3,8 +3,7 @@
 #SBATCH -p main
 #SBATCH -J obs_merging
 #SBATCH -N 4
-#SBATCH --ntasks-per-node=4
-#SBATCH --cpus-per-task=10
+#SBATCH --ntasks-per-node=1
 #SBATCH -t 10:00:00
 #SBATCH --mem=256G
 #SBATCH --array=0-44

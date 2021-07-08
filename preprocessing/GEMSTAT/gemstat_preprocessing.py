@@ -200,8 +200,6 @@ for file in obs_files:
     mv_dfs.append(get_missing_values(obs_df, file))
     # Keep only necessary parameters
     obs_df.drop(obs_df[~obs_df['Parameter Code'].isin(param_codes)].index, inplace=True, errors='ignore')
-    # Drop values that are below detection limit or suspected to be higher than reported
-    obs_df.drop(obs_df[obs_df['Value Flags'].isin(['<', '>'])].index, inplace=True, errors='ignore')
     # Drop missing or negative values
     obs_df.drop(
         obs_df[(obs_df['Value'].isnull()) | (obs_df['Value'] <= 0)].index, inplace=True, errors='ignore'
@@ -238,6 +236,10 @@ mv_df = pd.concat(mv_dfs)
 mv_df.to_csv(
     os.path.join(proc_dir, 'meta', ds_name + '_missing_values.csv'), sep=';', index=False, encoding='utf-8'
 )
+
+# Flag values that are marked as below and above detection limit in source data
+obs_df.loc[obs_df['Value Flags'] == '<', 'detection_limit_flag'] = '<'
+obs_df.loc[obs_df['Value Flags'] == '>', 'detection_limit_flag'] = '>'
 
 # Merge the DFs
 merged_df = site_df\
@@ -306,6 +308,7 @@ for code in output_codes:
         'source_param_name': code_df['source_param_name'],
         'obs_value': code_df['obs_value'],
         'source_obs_value': code_df['Value'],
+        'detection_limit_flag': code_df['detection_limit_flag'],
         'param_form': code_df['param_form'],
         'source_param_form': code_df['source_param_form'],
         'unit': code_df['unit'],

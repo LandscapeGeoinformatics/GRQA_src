@@ -207,8 +207,6 @@ for obs_chunk in obs_reader:
         obs_chunk, id_vars='RESULT_DATETIME', value_vars=remark_cols, var_name='remark_code', value_name='remark'
     )
     obs_chunk = pd.concat([value_chunk, remark_chunk], axis=1)
-    # Drop values that are below detection limit or suspected to be higher than reported
-    obs_chunk.drop(obs_chunk[obs_chunk['remark'].isin(['<', '>'])].index, inplace=True, errors='ignore')
     # Drop missing or negative values
     obs_chunk.drop(
         obs_chunk[(obs_chunk['source_obs_value'].isnull()) | (obs_chunk['source_obs_value'] <= 0)].index,
@@ -247,6 +245,10 @@ mv_df = pd.concat(mv_dfs)
 mv_df.to_csv(
     os.path.join(proc_dir, 'meta', ds_name + '_missing_values.csv'), sep=';', index=False, encoding='utf-8'
 )
+
+# Flag values that are marked as below and above detection limit in source data
+obs_df.loc[obs_df['remark'] == '<', 'detection_limit_flag'] = '<'
+obs_df.loc[obs_df['remark'] == '>', 'detection_limit_flag'] = '>'
 
 # Merge the DFs
 merged_df = site_df\
@@ -307,6 +309,7 @@ for code in output_codes:
         'source_param_code': code_df['source_param_code'],
         'param_name': code_df['param_name'],
         'source_param_name': code_df['source_param_name'],
+        'detection_limit_flag': code_df['detection_limit_flag'],
         'obs_value': code_df['obs_value'],
         'source_obs_value': code_df['source_obs_value'],
         'param_form': code_df['param_form'],

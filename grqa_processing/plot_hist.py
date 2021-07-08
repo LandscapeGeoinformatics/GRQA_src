@@ -62,6 +62,7 @@ max_year = 1970
 obs_df.drop(obs_df[obs_df['year'] < max_year].index, inplace=True)
 len_after = len(obs_df)
 before_perc = round((len_before - len_after) / len_before * 100, 1)
+grouped = obs_df.groupby(['source', 'year'])['obs_value'].count().reset_index()
 fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 4), facecolor='w')
 title_pad = 5
 if before_perc != 0.0:
@@ -72,11 +73,8 @@ ax.set_title(
     'Temporal distribution of ' + param_code + ' observation values {} - 2020'.format(max_year), fontweight='bold',
     fontname='Arial', fontsize=8, pad=title_pad
 )
-for source, data in obs_df.groupby('source'):
-    sns.histplot(
-        ax=ax, data=obs_df, x='year', hue='source', palette=color_dict, element='step',
-        binwidth=1, stat='count'
-    )
+for source, data in grouped.groupby('source'):
+	sns.lineplot(ax=ax, data=data, x='year', y='obs_value', hue='source', palette=color_dict)
 ax.set_xlabel('year', fontname='Arial')
 ax.set_ylabel('observation count', fontname='Arial')
 ax.legend([], [], frameon=False)

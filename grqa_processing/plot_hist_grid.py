@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import collections
 import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 
 # Name of the dataset
 ds_name = 'GRQA'
@@ -74,16 +75,14 @@ for param, unit, outlier_perc, ax, obs_df in zip(param_codes, units, outliers, a
 	obs_df.drop(obs_df[obs_df['year'] < max_year].index, inplace=True)
 	len_after = len(obs_df)
 	before_perc = round((len_before - len_after) / len_before * 100, 1)
+	grouped = obs_df.groupby(['source', 'year'])['obs_value'].count().reset_index()
 	if before_perc != 0.0:
 		text = 'Percentage of observations {:.0f} - {:.0f}: {:.1f}%'.format(min_year, max_year, before_perc)
 		ax.text(0.5, 1.05, text, ha='center', va='center', transform=ax.transAxes, fontsize=8)
 		title_pad = 20
 	ax.set_title(param, fontweight='bold', fontname='Arial', pad=title_pad, fontsize=10)
-	for source, data in obs_df.groupby('source'):
-		sns.histplot(
-			ax=ax, data=data, x='year', hue='source', palette=color_dict, element='step',
-			binwidth=1, stat='count'
-		)
+	for source, data in grouped.groupby('source'):
+		sns.lineplot(ax=ax, data=data, x='year', y='obs_value', hue='source', palette=color_dict)
 	ax.set_xlabel('year', fontname='Arial', fontsize=8)
 	ax.set_ylabel('count', fontname='Arial', fontsize=8)
 	ax.tick_params(labelsize=8)

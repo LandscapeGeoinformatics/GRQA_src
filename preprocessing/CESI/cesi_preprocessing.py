@@ -142,8 +142,7 @@ for obs_chunk in obs_reader:
     )
     # Keep only necessary parameters
     obs_chunk.drop(obs_chunk[~obs_chunk['VARIABLE_NAME'].isin(param_codes)].index, inplace=True, errors='ignore')
-    # Drop values that are below detection limit, missing or negative
-    obs_chunk.drop(obs_chunk[obs_chunk['FLAG_MARQUEUR'] != '='].index, inplace=True, errors='ignore')
+    # Drop values that are missing or negative
     obs_chunk.drop(
         obs_chunk[(obs_chunk['VALUE_VALEUR'].isnull()) | (obs_chunk['VALUE_VALEUR'] <= 0)].index, inplace=True,
         errors='ignore'
@@ -191,6 +190,9 @@ obs_df.drop(
 )
 obs_df.drop(obs_df[(obs_df['lat_wgs84'] < -90) & (obs_df['lat_wgs84'] > 90)].index, inplace=True, errors='ignore')
 obs_df.drop(obs_df[(obs_df['lon_wgs84'] < -180) & (obs_df['lon_wgs84'] > 180)].index, inplace=True, errors='ignore')
+
+# Flag values that are marked as below detection limit in source data
+obs_df.loc[obs_df['FLAG_MARQUEUR'] == '<', 'detection_limit_flag'] = '<'
 
 # Merge the DFs
 merged_df = obs_df\
@@ -250,6 +252,7 @@ for code in output_codes:
         'source_param_name': code_df['source_param_name'],
         'obs_value': code_df['obs_value'],
         'source_obs_value': code_df['VALUE_VALEUR'],
+        'detection_limit_flag': code_df['detection_limit_flag'],
         'param_form': code_df['param_form'],
         'source_param_form': code_df['source_param_form'],
         'unit': code_df['unit'],

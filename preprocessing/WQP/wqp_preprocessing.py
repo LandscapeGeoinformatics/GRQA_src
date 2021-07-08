@@ -196,6 +196,7 @@ obs_dtypes = {
     'ActivityStartTime/Time': object,
     'ActivityStartTime/TimeZoneCode': object,
     'MonitoringLocationIdentifier': object,
+    'ResultDetectionConditionText': object,
     'CharacteristicName': object,
     'ResultSampleFractionText': object,
     'ResultMeasureValue': np.float64,
@@ -260,6 +261,10 @@ mv_df.to_csv(
     os.path.join(proc_dir, 'meta', ds_name + '_' + param_code + '_missing_values.csv'), sep=';', index=False,
     encoding='utf-8'
 )
+
+# Flag values that are marked as below and above detection limit in source data
+obs_df.loc[obs_df['ResultDetectionConditionText'] == 'Present Below Quantification Limit', 'detection_limit_flag'] = '<'
+obs_df.loc[obs_df['ResultDetectionConditionText'] == 'Present Above Quantification Limit', 'detection_limit_flag'] = '>'
 
 # Merge the DFs
 merged_df = site_df\
@@ -360,6 +365,7 @@ for code in output_codes:
         'source_param_name': code_df['source_param_name'],
         'obs_value': code_df['obs_value'],
         'source_obs_value': code_df['ResultMeasureValue'],
+        'detection_limit_flag': code_df['detection_limit_flag'],
         'param_form': code_df['param_form'],
         'source_param_form': code_df['source_param_form'],
         'unit': code_df['unit'],
