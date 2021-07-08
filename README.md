@@ -1,4 +1,7 @@
 # GRQA_src
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5082148.svg)](https://doi.org/10.5281/zenodo.5082148)
+
 Scripts used during the creation of the Global River Water Quality Archive (GRQA).
 
 The dataset can be downloaded at <http://dx.doi.org/10.23673/re-273>
