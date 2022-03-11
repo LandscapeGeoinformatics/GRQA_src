@@ -53,7 +53,7 @@ obs_dtypes = {
 in_file = f'D:/GRQA_v1.1/{param}_GRQA.csv'
 obs_reader = pd.read_csv(in_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000)
 
-out_file = f'D:/GRQA_v1.2/{param}_GRQA.csv'
+out_file = f'D:/GRQA_v1.2/GRQA_data_v1.2/{param}_GRQA.csv'
 try:
     os.remove(out_file)
 except OSError:
@@ -64,12 +64,29 @@ for obs_chunk in obs_reader:
     obs_chunk.to_csv(out_file, sep=';', index=False, header=not os.path.exists(out_file), mode='a')
 
 # Check the number of rows and missing values
+# for file in [in_file, out_file]:
+#     rows = 0
+#     missing = 0
+#     obs_reader = pd.read_csv(file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000)
+#     for obs_chunk in obs_reader:
+#         rows += len(obs_chunk)
+#         missing += obs_chunk['obs_value'].isna().sum()
+#     print(f'Rows in {file}: {rows}')
+#     print(f'Missing values in {file}: {missing}')
+
 for file in [in_file, out_file]:
     rows = 0
     missing = 0
+    obs_sum = 0
+    obs_count = 0
     obs_reader = pd.read_csv(file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000)
     for obs_chunk in obs_reader:
         rows += len(obs_chunk)
         missing += obs_chunk['obs_value'].isna().sum()
+        condition = (obs_chunk['source'] == 'GLORICH') & (obs_chunk['site_country'] == 'Germany')
+        obs_sum += obs_chunk[condition]['obs_value'].sum()
+        obs_count += obs_chunk[condition]['obs_value'].count()
+    obs_mean = obs_sum / obs_count
     print(f'Rows in {file}: {rows}')
     print(f'Missing values in {file}: {missing}')
+    print(f'Mean GLORICH concentration in {file}: {obs_mean}')
