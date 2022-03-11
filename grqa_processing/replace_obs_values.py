@@ -64,16 +64,6 @@ for obs_chunk in obs_reader:
     obs_chunk.to_csv(out_file, sep=';', index=False, header=not os.path.exists(out_file), mode='a')
 
 # Check the number of rows and missing values
-# for file in [in_file, out_file]:
-#     rows = 0
-#     missing = 0
-#     obs_reader = pd.read_csv(file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000)
-#     for obs_chunk in obs_reader:
-#         rows += len(obs_chunk)
-#         missing += obs_chunk['obs_value'].isna().sum()
-#     print(f'Rows in {file}: {rows}')
-#     print(f'Missing values in {file}: {missing}')
-
 for file in [in_file, out_file]:
     rows = 0
     missing = 0
