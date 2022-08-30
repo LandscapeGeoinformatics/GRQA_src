@@ -7,8 +7,10 @@ import glob
 ds_name = 'WQP'
 
 # Directory paths
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-meta_dir = os.path.join(proj_dir, 'data', ds_name, 'processed', 'meta')
+# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
+# meta_dir = os.path.join(proj_dir, 'data', ds_name, 'processed', 'meta')
+proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
+meta_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds_name, 'processed', 'meta')
 
 # Merge and export WQP statistics
 fname_strings = ['missing_values.csv', 'file_info.csv', 'raw_stats.csv', 'processed_stats.csv']

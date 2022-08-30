@@ -93,15 +93,21 @@ ds_name = 'WQP'
 param_code = sys.argv[1]
 
 # Directory paths
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-raw_dir = os.path.join(proj_dir, 'data', ds_name, 'raw')
-proc_dir = os.path.join(proj_dir, 'data', ds_name, 'processed')
+# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
+# raw_dir = os.path.join(proj_dir, 'data', ds_name, 'raw')
+# proc_dir = os.path.join(proj_dir, 'data', ds_name, 'processed')
+
+# Directory paths
+proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
+raw_dir = os.path.join(proj_dir, 'river_quality', 'data', ds_name, 'raw')
+proc_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds_name, 'processed')
 
 # Download directory
 dl_dir = os.path.join(raw_dir, 'download_2020-11-16')
 
 # Import the code map
-cmap_file = os.path.join(raw_dir, 'meta', ds_name + '_code_map.txt')
+# cmap_file = os.path.join(raw_dir, 'meta', ds_name + '_code_map.txt')
+cmap_file = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds_name, 'raw', 'meta', ds_name + '_code_map.csv')
 cmap_dtypes = {
     'source_param_code': object,
     'param_code': object,
@@ -115,7 +121,8 @@ cmap_dtypes = {
     'unit': object,
     'source': object
 }
-cmap_df = pd.read_csv(cmap_file, sep='\t', usecols=cmap_dtypes.keys(), dtype=cmap_dtypes, encoding='utf-8')
+# cmap_df = pd.read_csv(cmap_file, sep='\t', usecols=cmap_dtypes.keys(), dtype=cmap_dtypes, encoding='utf-8')
+cmap_df = pd.read_csv(cmap_file, sep=';', usecols=cmap_dtypes.keys(), dtype=cmap_dtypes, encoding='utf-8')
 param_codes = cmap_df['source_param_code'].to_list()
 
 # Import site data
