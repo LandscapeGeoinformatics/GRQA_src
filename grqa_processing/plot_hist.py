@@ -18,9 +18,13 @@ sources = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 param_code = sys.argv[1]
 
 # Directory paths
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
-fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
+# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
+# data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
+# fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
+
+proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
+data_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
+fig_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_figures')
 
 # Import observation data
 obs_dtypes = {
@@ -74,19 +78,19 @@ ax.set_title(
     fontname='Arial', fontsize=8, pad=title_pad
 )
 for source, data in grouped.groupby('source'):
-	sns.lineplot(ax=ax, data=data, x='year', y='obs_value', hue='source', palette=color_dict)
+    sns.lineplot(ax=ax, data=data, x='year', y='obs_value', hue='source', palette=color_dict)
 ax.set_xlabel('year', fontname='Arial')
 ax.set_ylabel('observation count', fontname='Arial')
 ax.legend([], [], frameon=False)
 legend_dict = collections.OrderedDict([])
 for source in sources:
-	if source in obs_df['source'].unique():
-		color = colors[sources.index(source)]
-		legend_dict.update({source: color})
+    if source in obs_df['source'].unique():
+        color = colors[sources.index(source)]
+        legend_dict.update({source: color})
 patches = []
 for source in legend_dict:
-	data_key = mpatches.Patch(color=legend_dict[source], label=source)
-	patches.append(data_key)
+    data_key = mpatches.Patch(color=legend_dict[source], label=source)
+    patches.append(data_key)
 fig.legend(
     handles=patches, loc='upper right', fontsize=8, bbox_to_anchor=[1.2, 0.8]
 )
@@ -106,7 +110,7 @@ if outlier_perc != 0.0:
     ax.text(0.5, 1.05, text, ha='center', va='center', transform=ax.transAxes, fontsize=6)
     title_pad = 20
 ax.set_title(
-    'Histogram plot of ' + param_code + ' observation values', fontweight='bold', fontname='Arial', fontsize=8, 
+    'Histogram plot of ' + param_code + ' observation values', fontweight='bold', fontname='Arial', fontsize=8,
     pad=title_pad
 )
 sns.histplot(

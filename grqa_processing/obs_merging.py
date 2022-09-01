@@ -15,14 +15,19 @@ ds_names = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 param_code = sys.argv[1]
 
 # Project directory
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-meta_dir  = os.path.join(proj_dir, 'data', 'GRQA', 'meta')
-data_dir  = os.path.join(proj_dir, 'data', 'GRQA', 'data')
+# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
+# meta_dir  = os.path.join(proj_dir, 'data', 'GRQA', 'meta')
+# data_dir  = os.path.join(proj_dir, 'data', 'GRQA', 'data')
+
+proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
+meta_dir  = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_meta')
+data_dir  = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
 
 # Create dictionary with observation files to be merged
 file_dict = {}
 for ds in ds_names:
-    proc_dir = os.path.join(proj_dir, 'data', ds, 'processed')
+    # proc_dir = os.path.join(proj_dir, 'data', ds, 'processed')
+    proc_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds, 'processed')
     obs_files = os.listdir(proc_dir)
     obs_files = glob.glob(os.path.join(proc_dir, param_code + '_*.csv'))
     for obs_file in obs_files:

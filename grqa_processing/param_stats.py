@@ -8,9 +8,13 @@ import glob
 ds_name = 'GRQA'
 
 # Directory paths
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
-meta_dir = os.path.join(proj_dir, 'data', ds_name, 'meta')
+# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
+# data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
+# meta_dir = os.path.join(proj_dir, 'data', ds_name, 'meta')
+
+proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
+meta_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_meta')
+data_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
 
 # Read observation data and collect statistics
 obs_dtypes = {
@@ -39,7 +43,9 @@ for obs_file in obs_files:
     min_years = []
     max_years = []
     outlier_count = 0
-    obs_reader = pd.read_csv(obs_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='utf-8', chunksize=10000)
+    obs_reader = pd.read_csv(
+        obs_file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='utf-8', chunksize=10000
+    )
     for obs_chunk in obs_reader:
         id_set = set(obs_chunk['site_id'])
         site_ids.update(id_set)
@@ -63,7 +69,11 @@ for obs_file in obs_files:
 
 # Create and export DF with statistics
 stats_df = pd.DataFrame(
-    rows, columns=['Parameter code', 'Parameter name', 'Sites', 'Observations', 'Median value', 'Unit', 'Start year', 'End year', 'Outlier %']
+    rows,
+    columns=[
+        'Parameter code', 'Parameter name', 'Sites', 'Observations', 'Median value', 'Unit', 'Start year',
+        'End year', 'Outlier %'
+    ]
 )
 stats_df.sort_values(by=['Parameter code'], key=lambda col: col.str.lower(), ascending=True, inplace=True)
-stats_df.to_csv(os.path.join(meta_dir, ds_name + '_param_stats.csv'), sep=';', index=False, encoding='utf-8')
+stats_df.to_csv(os.path.join(meta_dir, 'stats', ds_name + '_param_stats.csv'), sep=';', index=False, encoding='utf-8')

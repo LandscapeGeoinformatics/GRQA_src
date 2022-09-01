@@ -20,9 +20,13 @@ sources = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 param_code = sys.argv[1]
 
 # Directory paths
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
-fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
+# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
+# data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
+# fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
+
+proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
+data_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
+fig_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_figures')
 
 # Import observation data
 obs_dtypes = {
@@ -88,8 +92,8 @@ ax.set_axis_off()
 ax.set_title('Spatial distribution of ' + param_code + ' sites', fontweight='bold', fontname='Arial', fontsize=6)
 for source, data in gdf.groupby('source'):
     data.plot(
-        ax=ax, marker='.', categorical=True, markersize=2, linewidth=0, legend=True, color=data['source'].map(color_dict),
-        label=source
+        ax=ax, marker='.', categorical=True, markersize=2, linewidth=0, legend=True,
+        color=data['source'].map(color_dict), label=source
     )
 fig.tight_layout()
 plt.legend(loc='lower center', ncol=5, bbox_to_anchor=[0.5, -0.04], frameon=False, markerscale=4, fontsize=4)
@@ -158,7 +162,10 @@ ax.set_axis_off()
 if outlier_perc != 0.0:
     text = 'Outliers detected by the IQR test ({}% of observations) have been removed'.format(outlier_perc)
     ax.text(0.5, 1, text, ha='center', va='center', transform=ax.transAxes, fontsize=4)
-ax.set_title('Median observation values of ' + param_code + ' sites ({})'.format(unit), fontweight='bold', fontname='Arial', fontsize=6)
+ax.set_title(
+    'Median observation values of ' + param_code + ' sites ({})'.format(unit), fontweight='bold', fontname='Arial',
+    fontsize=6
+)
 group_df = gdf.groupby('cl')
 legend_dict = collections.OrderedDict([])
 colors = ['#fef0d9', '#fdcc8a', '#fc8d59', '#e34a33', '#b30000']
