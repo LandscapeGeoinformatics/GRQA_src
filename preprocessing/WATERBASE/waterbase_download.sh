@@ -1,16 +1,22 @@
 #!/bin/bash
 
-#SBATCH -p main
-#SBATCH -J waterbase_download
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=1
-#SBATCH -t 01:00:00
+#SBATCH --job-name=waterbase_download
+#SBATCH --time=01:00:00
 #SBATCH --mem=64G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=holger.virro@ut.ee
+#SBATCH --output=waterbase_download_%j.out
+#SBATCH --error=waterbase_download_%j.err
 
-cd /gpfs/space/home/holgerv/gis_holgerv/river_quality/scripts/preprocessing/WATERBASE
+cd /gpfs/helios/home/holgerv/GRQA_src/preprocessing/WATERBASE
 
-module purge
-module load python-3.7.1
+# Load Python
+module load python/3.10.10
 
-source activate river_quality
-~/.conda/envs/river_quality/bin/python waterbase_download.py
+# Output directory
+out_dir=$1
+
+# Submit the Python script with a micromamba env
+micromamba run -n hpc python waterbase_download.py $out_dir

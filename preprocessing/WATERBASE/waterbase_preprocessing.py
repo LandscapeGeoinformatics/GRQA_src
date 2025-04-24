@@ -1,9 +1,11 @@
 # Import the libraries
+import sys
 import datetime
 import os
+import hashlib
+
 import pandas as pd
 import numpy as np
-import hashlib
 
 # Function for stripping whitespace from string columns
 def strip_whitespace(df):
@@ -88,20 +90,15 @@ def get_stats_df(df, groupby_cols, value_col, date_col):
 ds_name = 'WATERBASE'
 
 # Directory paths
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-raw_dir = os.path.join(proj_dir, 'data', ds_name, 'raw')
-proc_dir = os.path.join(proj_dir, 'data', ds_name, 'processed')
-
-# Download directory
-dl_dir = os.path.join(raw_dir, 'download_2020-11-16')
+proc_dir = sys.argv[1]
 
 # Import the code map
-cmap_file = os.path.join(raw_dir, 'meta', ds_name + '_code_map.csv')
+cmap_file = sys.argv[2]
 cmap_df = pd.read_csv(cmap_file, sep=';')
 param_codes = cmap_df['source_param_code'].to_list()
 
 # Import site data
-site_file = os.path.join(dl_dir, 'Waterbase_v2019_1_S_WISE6_SpatialObject_DerivedData.csv')
+site_file = sys.argv[3]
 site_dtypes = {
     'countryCode': object,
     'monitoringSiteIdentifier': object,
@@ -156,7 +153,7 @@ param_dtypes = {
   'Label': object,
   'Notation': object
 }
-param_file = os.path.join(dl_dir, 'ObservedProperty.csv')
+param_file = sys.argv[4]
 param_df = pd.read_csv(param_file, sep=',', usecols=param_dtypes.keys(), dtype=param_dtypes, quotechar='"')
 param_df = strip_whitespace(param_df)
 param_df = replace_chars(param_df)
@@ -166,7 +163,7 @@ info_dicts.append(get_file_info(param_file, len(param_df), 'Water chemistry obse
 mv_dfs.append(get_missing_values(param_df, param_file))
 
 # Import observation data
-obs_file = os.path.join(dl_dir, 'Waterbase_v2019_1_T_WISE6_DisaggregatedData.csv')
+obs_file = sys.argv[5]
 obs_dtypes = {
     'monitoringSiteIdentifier': object,
     'parameterWaterBodyCategory': object,
