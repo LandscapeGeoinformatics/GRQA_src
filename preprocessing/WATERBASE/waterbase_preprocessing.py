@@ -203,7 +203,16 @@ for obs_chunk in obs_reader:
         inplace=True, errors='ignore'
     )
     # Keep only values that are confirmed as correct and from a reliable source
-    obs_chunk.drop(obs_chunk[obs_chunk['resultObservationStatus'] != 'A'].index, inplace=True, errors='ignore')
+    obs_chunk.drop(
+        obs_chunk[
+            ~(
+                (obs_chunk['resultObservationStatus'].isna()) | 
+                (obs_chunk['resultObservationStatus'] == 'A')
+            )
+        ].index,
+        inplace=True,
+        errors='ignore'
+    )
     obs_chunk.drop(obs_chunk[obs_chunk['metadata_observationStatus'] != 'A'].index, inplace=True, errors='ignore')
     obs_chunks.append(obs_chunk)
 
