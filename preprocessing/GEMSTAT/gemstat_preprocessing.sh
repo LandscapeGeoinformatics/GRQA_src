@@ -1,16 +1,27 @@
 #!/bin/bash
 
-#SBATCH -p main
-#SBATCH -J gemstat_preprocessing
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=1
-#SBATCH -t 01:00:00
+#SBATCH --job-name=gemstat_preprocessing
+#SBATCH --time=12:00:00
 #SBATCH --mem=64G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=holger.virro@ut.ee
+#SBATCH --output=gemstat_preprocessing_%j.out
+#SBATCH --error=gemstat_preprocessing_%j.err
 
-cd /gpfs/space/home/holgerv/gis_holgerv/river_quality/scripts/preprocessing/GEMSTAT
+cd /gpfs/helios/home/holgerv/GRQA_src/preprocessing/GEMSTAT
 
-module purge
-module load python-3.7.1
+# Load Python
+module load python/3.10.10
 
-source activate river_quality
-~/.conda/envs/river_quality/bin/python gemstat_preprocessing.py
+# Input arguments
+proc_dir=/gpfs/terra/export/samba/gis/landscape_geoinfo/2021_grqa/working/GRQA_source_data/GEMSTAT/processed
+raw_dir=/gpfs/terra/export/samba/gis/landscape_geoinfo/2021_grqa/original/GRQA_source_data/GEMSTAT/raw
+cmap_file=${raw_dir}/meta/GEMSTAT_code_map.csv
+site_file=${raw_dir}/GFQA_v2/GEMStat_station_metadata.csv
+param_file=${raw_dir}/GFQA_v2/GEMStat_parameter_metadata.csv
+method_file=${raw_dir}/GFQA_v2/GEMStat_methods_metadata.csv
+
+# Submit the Python script with a micromamba env
+micromamba run -n hpc python gemstat_preprocessing.py $proc_dir $raw_dir $cmap_file $site_file $param_file $method_file

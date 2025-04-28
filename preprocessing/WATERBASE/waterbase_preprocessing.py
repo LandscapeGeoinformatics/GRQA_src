@@ -89,7 +89,7 @@ def get_stats_df(df, groupby_cols, value_col, date_col):
 # Name of the dataset
 ds_name = 'WATERBASE'
 
-# Directory paths
+# Processed directory
 proc_dir = sys.argv[1]
 
 # Import the code map

@@ -1,6 +1,8 @@
 # Import the libraries
 import datetime
 import os
+import sys
+
 import pandas as pd
 import numpy as np
 import glob
@@ -88,23 +90,19 @@ def get_stats_df(df, groupby_cols, value_col, date_col):
 # Name of the dataset
 ds_name = 'GEMSTAT'
 
-# Directory paths
-proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-raw_dir = os.path.join(proj_dir, 'data', ds_name, 'raw')
-proc_dir = os.path.join(proj_dir, 'data', ds_name, 'processed')
+# Processed directory
+proc_dir = sys.argv[1]
 
-# Download directory
-dl_dir = raw_dir
-
-# Metadata file
-meta_file = os.path.join(dl_dir, 'data_request.xls')
+# Raw directory
+raw_dir = sys.argv[2]
 
 # Import the code map
-cmap_file = os.path.join(dl_dir, 'meta', ds_name + '_code_map.csv')
+cmap_file = sys.argv[3]
 cmap_df = pd.read_csv(cmap_file, sep=';')
 param_codes = cmap_df['source_param_code'].to_list()
 
 # Import site data
+site_file = sys.argv[4]
 site_dtypes = {
     'GEMS Station Number': object,
     'Water Type': object,
@@ -116,7 +114,7 @@ site_dtypes = {
     'Latitude': np.float64,
     'Longitude': np.float64
 }
-site_df = pd.read_excel(meta_file, sheet_name='Station_Metadata', usecols=site_dtypes.keys(), dtype=site_dtypes)
+site_df = pd.read_csv(site_file, sep=';', usecols=site_dtypes.keys(), dtype=site_dtypes, encoding='latin-1', decimal=',')
 site_df = strip_whitespace(site_df)
 site_df = replace_chars(site_df)
 site_df.drop_duplicates(inplace=True)
@@ -126,11 +124,11 @@ site_df.drop(site_df[site_df['Water Type'] != 'River station'].index, inplace=Tr
 
 # Get site file information and append to list
 info_dicts = []
-info_dicts.append(get_file_info(meta_file, len(site_df), 'Sampling location metadata', 'Station_Metadata'))
+info_dicts.append(get_file_info(site_file, len(site_df), 'Sampling location data'))
 
 # Get missing values and append to list
 mv_dfs = []
-mv_dfs.append(get_missing_values(site_df, meta_file, 'Station_Metadata'))
+mv_dfs.append(get_missing_values(site_df, site_file, 'Station_Metadata'))
 
 # Drop sites with missing or implausible location information
 site_df.drop(site_df[(site_df['GEMS Station Number'].isnull())].index, inplace=True, errors='ignore')
@@ -147,66 +145,70 @@ site_df.drop(
 )
 
 # Import parameter metadata
+param_file = sys.argv[5]
 param_dtypes = {
     'Parameter Code': object,
     'Parameter Long Name': object,
     'Parameter Description': object
 }
-param_df = pd.read_excel(
-    meta_file, sheet_name='Parameter_Metadata', usecols=param_dtypes.keys(), dtype=param_dtypes
+param_df = pd.read_csv(
+    param_file, sep=';', usecols=param_dtypes.keys(), dtype=param_dtypes, encoding='latin-1'
 )
 param_df = strip_whitespace(param_df)
 param_df = replace_chars(param_df)
-info_dicts.append(get_file_info(meta_file, len(param_df), 'Parameter metadata', 'Parameter_Metadata'))
-mv_dfs.append(get_missing_values(param_df, meta_file, 'Parameter_Metadata'))
+info_dicts.append(get_file_info(param_file, len(param_df), 'Parameter metadata'))
+mv_dfs.append(get_missing_values(param_df, param_file))
 
 # Import method metadata
+method_file = sys.argv[6]
 method_dtypes = {
     'Parameter Code': object,
     'Analysis Method Code': object,
     'Method Name': object,
     'Method Description': object
 }
-method_df = pd.read_excel(
-    meta_file, sheet_name='Methods_Metadata', usecols=method_dtypes.keys(), dtype=method_dtypes
+method_df = pd.read_csv(
+    method_file, sep=';', usecols=method_dtypes.keys(), dtype=method_dtypes, encoding='latin-1'
 )
 method_df = strip_whitespace(method_df)
 method_df = replace_chars(method_df)
-info_dicts.append(get_file_info(meta_file, len(method_df), 'Method metadata', 'Methods_Metadata'))
-mv_dfs.append(get_missing_values(method_df, meta_file, 'Methods_Metadata'))
+info_dicts.append(get_file_info(method_file, len(method_df), 'Method metadata'))
+mv_dfs.append(get_missing_values(method_df, method_file))
 
 # List of observation files
-obs_files = glob.glob(os.path.join(raw_dir, '*.csv'))
+obs_files = glob.glob(os.path.join(raw_dir, 'GFQA_v2/*.csv'))
 
 # Import observation data
 obs_dtypes = {
-    'GEMS Station Number': object,
-    'Sample Date': object,
-    'Sample Time': object,
-    'Parameter Code': object,
-    'Analysis Method Code': object,
-    'Value Flags': object,
+    'GEMS.Station.Number': object,
+    'Sample.Date': object,
+    'Sample.Time': object,
+    'Parameter.Code': object,
+    'Analysis.Method.Code': object,
+    'Value.Flags': object,
     'Value': np.float64,
     'Unit': object,
-    'Data Quality': object
+    'Data.Quality': object
 }
 obs_dfs = []
 for file in obs_files:
-    obs_df = pd.read_csv(file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='latin-1')
-    obs_df = strip_whitespace(obs_df)
-    obs_df = replace_chars(obs_df)
-    obs_df.drop_duplicates(inplace=True)
-    info_dicts.append(get_file_info(file, len(obs_df), 'Observation data'))
-    mv_dfs.append(get_missing_values(obs_df, file))
-    # Keep only necessary parameters
-    obs_df.drop(obs_df[~obs_df['Parameter Code'].isin(param_codes)].index, inplace=True, errors='ignore')
-    # Drop missing or negative values
-    obs_df.drop(
-        obs_df[(obs_df['Value'].isnull()) | (obs_df['Value'] <= 0)].index, inplace=True, errors='ignore'
-    )
-    # Drop suspect or poor quality values
-    obs_df.drop(obs_df[obs_df['Data Quality'].isin(['Suspect', 'Poor'])].index, inplace=True, errors='ignore')
-    obs_dfs.append(obs_df)
+    # Skip reading metadata files
+    if 'GEMStat' not in file:
+        obs_df = pd.read_csv(file, sep=';', usecols=obs_dtypes.keys(), dtype=obs_dtypes, encoding='latin-1')
+        obs_df = strip_whitespace(obs_df)
+        obs_df = replace_chars(obs_df)
+        obs_df.drop_duplicates(inplace=True)
+        info_dicts.append(get_file_info(file, len(obs_df), 'Observation data'))
+        mv_dfs.append(get_missing_values(obs_df, file))
+        # Keep only necessary parameters
+        obs_df.drop(obs_df[~obs_df['Parameter.Code'].isin(param_codes)].index, inplace=True, errors='ignore')
+        # Drop missing or negative values
+        obs_df.drop(
+            obs_df[(obs_df['Value'].isnull()) | (obs_df['Value'] <= 0)].index, inplace=True, errors='ignore'
+        )
+        # Drop observations pending review, suspect or contaminated
+        obs_df.drop(obs_df[obs_df['Data.Quality'].isin(['Pending review', 'Suspect', 'Contamination'])].index, inplace=True, errors='ignore')
+        obs_dfs.append(obs_df)
 
 # DF of observations
 obs_df = pd.concat(obs_dfs)
@@ -220,8 +222,8 @@ hash_ids = [hashlib.sha256(string.encode()).hexdigest() for string in obs_string
 obs_df['obs_id'] = hash_ids
 
 # Convert date to correct format and add time column
-obs_df['obs_date'] = pd.to_datetime(obs_df['Sample Date'], format='%Y-%m-%d').dt.strftime('%Y-%m-%d')
-obs_df['obs_time'] = pd.to_datetime(obs_df['Sample Time'], format='%H:%M').dt.strftime('%H:%M:%S')
+obs_df['obs_date'] = pd.to_datetime(obs_df['Sample.Date'], format='%Y-%m-%d').dt.strftime('%Y-%m-%d')
+obs_df['obs_time'] = pd.to_datetime(obs_df['Sample.Time'], format='%H:%M').dt.strftime('%H:%M:%S')
 
 # Check the validity of the dates and drop invalid dates
 obs_df['valid_date'] = obs_df.apply(check_date, date_col='obs_date', axis=1)
@@ -238,19 +240,19 @@ mv_df.to_csv(
 )
 
 # Flag values that are marked as below and above detection limit in source data
-obs_df.loc[obs_df['Value Flags'] == '<', 'detection_limit_flag'] = '<'
-obs_df.loc[obs_df['Value Flags'] == '>', 'detection_limit_flag'] = '>'
+obs_df.loc[obs_df['Value.Flags'] == '<', 'detection_limit_flag'] = '<'
+obs_df.loc[obs_df['Value.Flags'] == '>', 'detection_limit_flag'] = '>'
 
 # Merge the DFs
 merged_df = site_df\
-    .merge(obs_df, how='left', on='GEMS Station Number')\
-    .merge(param_df, how='left', on='Parameter Code')\
+    .merge(obs_df, how='left', left_on='GEMS Station Number', right_on='GEMS.Station.Number')\
+    .merge(param_df, how='left', left_on='Parameter.Code', right_on='Parameter Code')\
     .merge(
         method_df, how='left',
-        left_on=['Parameter Code', 'Analysis Method Code'], right_on=['Parameter Code', 'Analysis Method Code']
+        left_on=['Parameter.Code', 'Analysis.Method.Code'], right_on=['Parameter Code', 'Analysis Method Code']
     )\
     .merge(
-        cmap_df, how='left', left_on=['Parameter Code', 'Unit'],
+        cmap_df, how='left', left_on=['Parameter.Code', 'Unit'],
         right_on=['source_param_code', 'source_unit']
     )
 merged_df.drop_duplicates(inplace=True)
