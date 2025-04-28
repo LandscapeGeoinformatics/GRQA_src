@@ -1,16 +1,22 @@
 #!/bin/bash
 
-#SBATCH -p main
-#SBATCH -J gemstat_units
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=1
-#SBATCH -t 01:00:00
+#SBATCH --job-name=gemstat_units
+#SBATCH --time=12:00:00
 #SBATCH --mem=64G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=holger.virro@ut.ee
+#SBATCH --output=gemstat_units_%j.out
+#SBATCH --error=gemstat_units_%j.err
 
-cd /gpfs/space/home/holgerv/gis_holgerv/river_quality/scripts/preprocessing/GEMSTAT
+cd /gpfs/helios/home/holgerv/GRQA_src/preprocessing/GEMSTAT
 
-module purge
-module load python-3.7.1
+# Load Python
+module load python/3.10.10
 
-source activate river_quality
-~/.conda/envs/river_quality/bin/python gemstat_units.py
+# Input argument
+raw_dir=$1
+
+# Submit the Python script with a micromamba env
+micromamba run -n hpc python gemstat_units.py $raw_dir
