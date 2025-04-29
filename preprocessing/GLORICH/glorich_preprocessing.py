@@ -1,6 +1,8 @@
 # Import the libraries
 import datetime
 import os
+import sys
+
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -88,27 +90,19 @@ def get_stats_df(df, groupby_cols, value_col, date_col):
 # Name of the dataset
 ds_name = 'GLORICH'
 
-# Directory paths
-# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-# raw_dir = os.path.join(proj_dir, 'data', ds_name, 'raw')
-# proc_dir = os.path.join(proj_dir, 'data', ds_name, 'processed')
+# Processed directory
+proc_dir = sys.argv[1]
 
-# Directory paths
-proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
-raw_dir = os.path.join(proj_dir, 'river_quality', 'data', ds_name, 'raw')
-proc_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds_name, 'processed')
-
-# Download directory
-dl_dir = os.path.join(raw_dir, 'download_2020-11-16')
+# Raw directory
+raw_dir = sys.argv[2]
 
 # Import the code map
-# cmap_file = os.path.join(raw_dir, 'meta', ds_name + '_code_map.csv')
-cmap_file = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds_name, 'raw', 'meta', ds_name + '_code_map.csv')
+cmap_file = sys.argv[3]
 cmap_df = pd.read_csv(cmap_file, sep=';')
 param_codes = cmap_df['source_param_code'].to_list()
 
 # Import site point data
-site_file = os.path.join(dl_dir, 'Shapefiles_GloRiCh/Shapes_GloRiCh/Sampling_Locations_v1.shp')
+site_file = sys.argv[4]
 site_df = gpd.read_file(site_file)
 site_df = strip_whitespace(site_df)
 site_df = replace_chars(site_df)
@@ -149,7 +143,7 @@ dup_df.to_csv(os.path.join(proc_dir, 'meta', ds_name + '_dup_sites.csv'), sep=';
 site_df.drop_duplicates(subset='STAT_ID', keep='first', inplace=True)
 
 # Import site name data
-sname_file = os.path.join(dl_dir, 'sampling_locations.csv')
+sname_file = sys.argv[5]
 sname_dtypes = {
     'STAT_ID': np.int64,
     'STATION_NAME': object,
@@ -168,7 +162,7 @@ info_dicts.append(get_file_info(sname_file, len(sname_df), 'Site name data'))
 mv_dfs.append(get_missing_values(sname_df, sname_file))
 
 # Import catchment data
-catchment_file = os.path.join(dl_dir, 'catchment_properties.csv')
+catchment_file = sys.argv[6]
 catchment_dtypes = {
     'STAT_ID': np.int64,
     'Shape_Area': np.float64
@@ -181,11 +175,11 @@ info_dicts.append(get_file_info(catchment_file, len(catchment_df), 'Catchment da
 mv_dfs.append(get_missing_values(catchment_df, catchment_file))
 
 # Import remark data
-remark_file = os.path.join(raw_dir, 'meta', ds_name + '_remark_codes.csv')
+remark_file = sys.argv[7]
 remark_df = pd.read_csv(remark_file, sep=';')
 
 # Import observation data
-obs_file = os.path.join(dl_dir, 'hydrochemistry.csv')
+obs_file = sys.argv[8]
 obs_dtypes = {
     'STAT_ID': np.int64,
     'RESULT_DATETIME': object
@@ -195,7 +189,16 @@ remark_cols = [code + '_vrc' for code in param_codes]
 for value_col, remark_col in zip(value_cols, remark_cols):
     obs_dtypes[value_col] = np.float64
     obs_dtypes[remark_col] = object
-obs_reader = pd.read_csv(obs_file, sep=',', usecols=obs_dtypes.keys(), dtype=obs_dtypes, chunksize=100000, skipinitialspace=True, quotechar='"')
+obs_reader = pd.read_csv(
+    obs_file,
+    sep=',',
+    usecols=obs_dtypes.keys(),
+    dtype=obs_dtypes,
+    chunksize=100000,
+    skipinitialspace=True,
+    quotechar='"',
+    encoding='unicode_escape'
+)
 
 # Process observation data in chunks
 obs_row_count = 0
