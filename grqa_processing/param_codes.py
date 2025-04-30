@@ -1,4 +1,5 @@
 # Import the libraries
+import sys
 import os
 import glob
 
@@ -6,14 +7,14 @@ import glob
 ds_names = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 
 # Project directory
-# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
+proj_dir = sys.argv[1]
 
 # Create list of all parameter codes
 param_codes = []
 for ds in ds_names:
-    # proc_dir = os.path.join(proj_dir, 'data', ds, 'processed')
-    proc_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds, 'processed')
+    proc_dir = os.path.join(
+        proj_dir, 'working', 'GRQA_source_data', ds, 'processed'
+    )
     obs_files = os.listdir(proc_dir)
     obs_files = glob.glob(os.path.join(proc_dir, '*.csv'))
     for obs_file in obs_files:
@@ -23,8 +24,7 @@ for ds in ds_names:
 param_codes.sort(key=str.lower)
 
 # Export list
-# fname = os.path.join(proj_dir, 'data', 'GRQA', 'GRQA_param_codes.txt')
-fname = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_meta', 'GRQA_param_codes.txt')
+fname = os.path.join(proj_dir, 'final', 'GRQA_meta', 'GRQA_param_codes.txt')
 with open(fname, 'w') as file:
     file.write('\n'.join(param_codes))
     file.close()

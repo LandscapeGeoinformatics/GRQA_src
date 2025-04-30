@@ -1,18 +1,22 @@
 #!/bin/bash
 
-#SBATCH -p amd
-#SBATCH -J param_codes
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=1
-#SBATCH -t 01:00:00
-#SBATCH --mem=128G
+#SBATCH --job-name=param_codes
+#SBATCH --time=01:00:00
+#SBATCH --mem=64G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-type=BEGIN,END,FAIL
+#SBATCH --mail-user=holger.virro@ut.ee
+#SBATCH --output=param_codes_%j.out
+#SBATCH --error=param_codes_%j.err
 
-# cd /gpfs/space/home/holgerv/gis_holgerv/river_quality/scripts/grqa_processing
-cd /gpfs/terra/export/samba/gis/holgerv/river_quality/scripts/grqa_processing
+cd /gpfs/helios/home/holgerv/GRQA_src/grqa_processing
 
-module purge
-# module load python-3.7.1
-module load python
+# Load Python
+module load python/3.10.10
 
-source activate river_quality
-~/.conda/envs/river_quality/bin/python param_codes.py
+# Project directory
+proj_dir=/gpfs/terra/export/samba/gis/landscape_geoinfo/2021_grqa
+
+# Submit the Python script with a micromamba env
+micromamba run -n hpc python param_codes.py $proj_dir
