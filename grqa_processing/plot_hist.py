@@ -1,11 +1,12 @@
 # Import the libraries
 import sys
 import os
+import collections
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import collections
 import matplotlib.patches as mpatches
 
 # Name of the dataset
@@ -14,17 +15,17 @@ ds_name = 'GRQA'
 # Source dataset names
 sources = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 
+# Project directory
+proj_dir = sys.argv[1]
+
 # Get parameter code
-param_code = sys.argv[1]
+param_code = sys.argv[2]
 
-# Directory paths
-# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-# data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
-# fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
+# Data directory
+data_dir  = os.path.join(proj_dir, 'final', 'GRQA_data')
 
-proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
-data_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
-fig_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_figures')
+# Data directory
+fig_dir  = os.path.join(proj_dir, 'final', 'GRQA_figures')
 
 # Import observation data
 obs_dtypes = {
@@ -62,19 +63,26 @@ color_dict = dict(zip(sources, colors))
 obs_df['year'] = pd.to_datetime(obs_df['obs_date'], errors='coerce').dt.year
 len_before = len(obs_df)
 min_year = obs_df['year'].min()
-max_year = 1970
-obs_df.drop(obs_df[obs_df['year'] < max_year].index, inplace=True)
+xlim_start = 1970
+max_year = obs_df['year'].max()
+obs_df.drop(obs_df[obs_df['year'] < xlim_start].index, inplace=True)
 len_after = len(obs_df)
 before_perc = round((len_before - len_after) / len_before * 100, 1)
 grouped = obs_df.groupby(['source', 'year'])['obs_value'].count().reset_index()
 fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(6, 4), facecolor='w')
 title_pad = 5
 if before_perc != 0.0:
-    text = 'Percentage of observations {:.0f} - {:.0f}: {:.1f}%'.format(min_year, max_year, before_perc)
+    text = (
+        'Percentage of observations {:.0f} - {:.0f}: {:.1f}%'
+        .format(min_year, xlim_start, before_perc)
+    )
     ax.text(0.5, 1.05, text, ha='center', va='center', transform=ax.transAxes, fontsize=6)
     title_pad = 20
 ax.set_title(
-    'Temporal distribution of ' + param_code + ' observation values {} - 2020'.format(max_year), fontweight='bold',
+    (
+        'Temporal distribution of {} observation values {} - {}'
+        .format(param_code, xlim_start, max_year)
+    ), fontweight='bold',
     fontname='Arial', fontsize=8, pad=title_pad
 )
 for source, data in grouped.groupby('source'):

@@ -1,10 +1,12 @@
 # Import the libraries
+import sys
 import os
+import collections
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import collections
 import matplotlib.patches as mpatches
 
 # Name of the dataset
@@ -16,14 +18,14 @@ sources = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 # Parameter codes
 param_codes = ['DO', 'DOC', 'TP', 'TSS']
 
-# Directory paths
-# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-# data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
-# fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
+# Project directory
+proj_dir = sys.argv[1]
 
-proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
-data_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
-fig_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_figures')
+# Data directory
+data_dir  = os.path.join(proj_dir, 'final', 'GRQA_data')
+
+# Data directory
+fig_dir  = os.path.join(proj_dir, 'final', 'GRQA_figures')
 
 # Import observation data
 obs_dtypes = {
@@ -73,13 +75,17 @@ for param, unit, outlier_perc, ax, obs_df in zip(param_codes, units, outliers, a
     obs_df['year'] = pd.to_datetime(obs_df['obs_date'], errors='coerce').dt.year
     len_before = len(obs_df)
     min_year = obs_df['year'].min()
-    max_year = 1970
-    obs_df.drop(obs_df[obs_df['year'] < max_year].index, inplace=True)
+    xlim_start = 1970
+    max_year = obs_df['year'].max()
+    obs_df.drop(obs_df[obs_df['year'] < xlim_start].index, inplace=True)
     len_after = len(obs_df)
     before_perc = round((len_before - len_after) / len_before * 100, 1)
     grouped = obs_df.groupby(['source', 'year'])['obs_value'].count().reset_index()
     if before_perc != 0.0:
-        text = 'Percentage of observations {:.0f} - {:.0f}: {:.1f}%'.format(min_year, max_year, before_perc)
+        text = (
+            'Percentage of observations {:.0f} - {:.0f}: {:.1f}%'
+            .format(min_year, xlim_start, before_perc)
+        )
         ax.text(0.5, 1.05, text, ha='center', va='center', transform=ax.transAxes, fontsize=8)
         title_pad = 20
     ax.set_title(param, fontweight='bold', fontname='Arial', pad=title_pad, fontsize=10)
