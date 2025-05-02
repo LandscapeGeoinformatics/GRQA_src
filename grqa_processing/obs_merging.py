@@ -2,8 +2,10 @@
 import sys
 import os
 import glob
+
 import pandas as pd
 import numpy as np
+from dateutil.relativedelta import relativedelta
 from sklearn.cluster import DBSCAN
 from sklearn.metrics import mean_squared_error
 from math import sqrt
@@ -11,23 +13,24 @@ from math import sqrt
 # Dataset names
 ds_names = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 
-# Get parameter code
-param_code = sys.argv[1]
-
 # Project directory
-# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-# meta_dir  = os.path.join(proj_dir, 'data', 'GRQA', 'meta')
-# data_dir  = os.path.join(proj_dir, 'data', 'GRQA', 'data')
+proj_dir = sys.argv[1]
 
-proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
-meta_dir  = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_meta')
-data_dir  = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
+# Get parameter code
+param_code = sys.argv[2]
+
+# Metadata directory
+meta_dir  = os.path.join(proj_dir, 'final', 'GRQA_meta')
+
+# Data directory
+data_dir  = os.path.join(proj_dir, 'final', 'GRQA_data')
 
 # Create dictionary with observation files to be merged
 file_dict = {}
 for ds in ds_names:
-    # proc_dir = os.path.join(proj_dir, 'data', ds, 'processed')
-    proc_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_source_data', ds, 'processed')
+    proc_dir = os.path.join(
+        proj_dir, 'working', 'GRQA_source_data', ds, 'processed'
+    )
     obs_files = os.listdir(proc_dir)
     obs_files = glob.glob(os.path.join(proc_dir, param_code + '_*.csv'))
     for obs_file in obs_files:
@@ -75,7 +78,13 @@ for param_code in list(file_dict.keys()):
         .rename(columns={'obs_ym': 'months_with_obs'})
     avail_df = avail_df.groupby('site_id').agg(min_date=('obs_date', 'min'),
                                                  max_date=('obs_date', 'max')).reset_index()
-    avail_df['ts_len_months'] = ((avail_df['max_date'] - avail_df['min_date']) / np.timedelta64(1, 'M'))
+    avail_df['ts_len_months'] = avail_df.apply(
+        lambda row: (
+            relativedelta(row['max_date'], row['min_date']).years * 12 + 
+            relativedelta(row['max_date'], row['min_date']).months
+        ),
+        axis=1
+    )
     avail_df = avail_df.merge(group_df, on='site_id')
     avail_df['site_ts_availability'] = np.round(avail_df['months_with_obs'] / avail_df['ts_len_months'], 2)
     avail_df.loc[avail_df['site_ts_availability'] > 1, 'site_ts_availability'] = 1
@@ -84,7 +93,14 @@ for param_code in list(file_dict.keys()):
     # Calculate the monthly continuity as the ratio between the longest period of consecutive months with any
     # measurements and the length of time series in months
     cont_df = merged_df[['site_id', 'obs_date', 'obs_value']]
-    cont_df = cont_df.set_index('obs_date').groupby('site_id').resample('M').count().drop('site_id', 1).reset_index()
+    cont_df = (
+        cont_df.set_index('obs_date')
+        .groupby('site_id')
+        .resample('ME')
+        .count()
+        .drop('site_id', axis=1)
+        .reset_index()
+    )
     cont_df['month_has_obs'] = np.where(cont_df['obs_value'] > 0, True, False)
     group_ids = cont_df['month_has_obs'].diff().ne(0).cumsum()
     cont_df['count'] = cont_df['month_has_obs'].groupby([cont_df['site_id'], group_ids]).cumsum()
