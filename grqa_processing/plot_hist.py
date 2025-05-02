@@ -24,7 +24,7 @@ param_code = sys.argv[2]
 # Data directory
 data_dir  = os.path.join(proj_dir, 'final', 'GRQA_data')
 
-# Data directory
+# Figure directory
 fig_dir  = os.path.join(proj_dir, 'final', 'GRQA_figures')
 
 # Import observation data
