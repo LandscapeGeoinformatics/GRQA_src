@@ -1,12 +1,15 @@
 # Import the libraries
+import sys
 import os
+import collections
+
 import pandas as pd
 import numpy as np
 import geopandas as gpd
+import cartopy.io.shapereader as shpreader
 import matplotlib.pyplot as plt
 import matplotlib
-import pysal.viz.mapclassify as mc
-import collections
+import mapclassify as mc
 import matplotlib.patches as mpatches
 
 # Name of the dataset
@@ -18,14 +21,14 @@ sources = ['CESI', 'GEMSTAT', 'GLORICH', 'WATERBASE', 'WQP']
 # Parameter codes
 param_codes = ['DO', 'DOC', 'TP', 'TSS']
 
-# Directory paths
-# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-# data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
-# fig_dir = os.path.join(proj_dir, 'data', ds_name, 'figures')
+# Project directory
+proj_dir = sys.argv[1]
 
-proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
-data_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
-fig_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_figures')
+# Data directory
+data_dir  = os.path.join(proj_dir, 'final', 'GRQA_data')
+
+# Figure directory
+fig_dir  = os.path.join(proj_dir, 'final', 'GRQA_figures')
 
 # Import observation data
 obs_dtypes = {
@@ -102,8 +105,11 @@ gdf.loc[(gdf['site_ts_continuity'] > 0.6) & (gdf['site_ts_continuity'] < 0.8), '
 gdf.loc[gdf['site_ts_continuity'] > 0.8, 'cont_class'] = '80 - 100%'
 
 # Import world map
-world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-world['geometry'] = world['geometry'].to_crs('+proj=robin')
+shpfilename = shpreader.natural_earth(
+    resolution='110m', category='cultural', name='admin_0_countries'
+)
+world = gpd.read_file(shpfilename)
+world = world.to_crs('+proj=robin')
 
 # Plot sites
 colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00']
