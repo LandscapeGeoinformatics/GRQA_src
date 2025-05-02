@@ -1,20 +1,22 @@
 # Import the libraries
+import sys
 import os
+import glob
+
 import pandas as pd
 import numpy as np
-import glob
 
 # Name of the dataset
 ds_name = 'GRQA'
 
-# Directory paths
-# proj_dir = '/gpfs/space/home/holgerv/gis_holgerv/river_quality'
-# data_dir = os.path.join(proj_dir, 'data', ds_name, 'data')
-# meta_dir = os.path.join(proj_dir, 'data', ds_name, 'meta')
+# Project directory
+proj_dir = sys.argv[1]
 
-proj_dir = '/gpfs/terra/export/samba/gis/holgerv'
-meta_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_meta')
-data_dir = os.path.join(proj_dir, 'GRQA_v1.3', 'GRQA_data_v1.3')
+# Metadata directory
+meta_dir  = os.path.join(proj_dir, 'final', 'GRQA_meta')
+
+# Data directory
+data_dir  = os.path.join(proj_dir, 'final', 'GRQA_data')
 
 # Read observation data and collect statistics
 obs_dtypes = {
