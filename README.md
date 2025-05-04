@@ -4,9 +4,9 @@
 
 Scripts used during the creation of the Global River Water Quality Archive (GRQA).
 
-The dataset can be downloaded at <https://zenodo.org/record/5101057>
+The dataset can be downloaded at <https://doi.org/10.5281/zenodo.5097436>.
 
-The data description paper is available at <https://essd.copernicus.org/articles/13/5483/2021/>
+The data description paper is available at <https://essd.copernicus.org/articles/13/5483/2021/>.
 
 The scripts are divided into two folders. Folder **preprocessing** contains scripts used for preprocessing raw source data into a common structure used for GRQA. Folder **grqa_processing** contains scripts used for processing the merged data, generating plots and statistics.
 
